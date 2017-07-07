@@ -21,18 +21,18 @@ import java.util.List;
 import java.util.Map.Entry;
 
 @SuppressWarnings("serial")
-public class MTLServer extends UnicastRemoteObject implements InterfaceRMI {
+public class DDOServer extends UnicastRemoteObject implements InterfaceRMI {
 
     private File logs = null;
     private int recordCount =0;
     private int baseID = 10000;
     private String recordID;
     private int LVLport = 7875;
-    private int DDOPort = 7825;
+    private int MTLPort = 1412;
     private String managerID;
     public HashMap<String, List<Records>> recordDetails;
     
-    public MTLServer() throws IOException {
+    public DDOServer() throws IOException {
         logs = new File("MTLlog.txt");
         if(!logs.exists()) {
             logs.createNewFile();
@@ -49,7 +49,7 @@ public class MTLServer extends UnicastRemoteObject implements InterfaceRMI {
             String specialization, String location) throws RemoteException, IOException
     {
         // TODO Auto-generated method stub
-        if(location.equalsIgnoreCase("MTL"))
+        if(location.equalsIgnoreCase("DDO"))
                 recordCount++;
         if(location.equalsIgnoreCase("LVL")) {
             
@@ -131,16 +131,16 @@ public class MTLServer extends UnicastRemoteObject implements InterfaceRMI {
             aSocket.close();
             this.traceLog("Connection is closed with LVL Server");
             aSocket = new DatagramSocket();
-            request = new DatagramPacket(message, message.length, aHost, DDOPort);
+            request = new DatagramPacket(message, message.length, aHost, MTLPort);
             aSocket.send(request);
-            this.traceLog("Sent request to DDO Server");
+            this.traceLog("Sent request to MTL Server");
             byte[] buffer1 = new byte[1000];
             DatagramPacket reply1 = new DatagramPacket(buffer1, buffer1.length);
             aSocket.receive(reply1);
-            response = "MTL " +recordCount+ ",LVL " +response+ ",DDO" +reply1.getData();
-            this.traceLog("Received response from DDO Server");
+            response = "MTL " +reply1.getData()+ ",LVL " +response+ ",DDO" +recordCount;
+            this.traceLog("Received response from MTL Server");
             aSocket.close();
-            this.traceLog("Connection is closed with DDO Server");
+            this.traceLog("Connection is closed with MTL Server");
             return response;
              }
         catch(SocketException e) {
@@ -179,7 +179,7 @@ public class MTLServer extends UnicastRemoteObject implements InterfaceRMI {
                     if(fieldName.equalsIgnoreCase("location")) {
                         String c = ((TeacherRecord) rec).getLocation();
                         ((TeacherRecord) rec).setLocation(newValue);
-                        if(newValue.equalsIgnoreCase("MTL")) {
+                        if(newValue.equalsIgnoreCase("DDO")) {
                             recordCount++;
                         }
                         if(newValue.equalsIgnoreCase("LVL")) {
@@ -223,19 +223,19 @@ public class MTLServer extends UnicastRemoteObject implements InterfaceRMI {
         fw.close();
     }
    public static void main(String[] args) {
-       MTLServer mtl;
+       DDOServer ddo;
     try
     {
-        mtl = new MTLServer();
-        Registry registry = LocateRegistry.createRegistry(1412);
-        registry.bind("MTLServer" , mtl);
-        mtl.traceLog("MTL server started");
+        ddo = new DDOServer();
+        Registry registry = LocateRegistry.createRegistry(7825);
+        registry.bind("DDOServer" , ddo);
+        ddo.traceLog("DDO server started");
         while(true) {
-            DatagramSocket socket = new DatagramSocket(1412);
+            DatagramSocket socket = new DatagramSocket(7825);
             byte[] buffer = new byte[1000];
             DatagramPacket request = new DatagramPacket(buffer, buffer.length);
             socket.receive(request);
-            String rep = "MTL " +mtl.recordCount+ ",";
+            String rep = "DDO" +ddo.recordCount+ ",";
             byte[] buffer1 = rep.getBytes();
             DatagramPacket reply = new DatagramPacket(buffer1, buffer1.length, request.getAddress(), request.getPort());
             socket.send(reply);

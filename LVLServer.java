@@ -21,18 +21,18 @@ import java.util.List;
 import java.util.Map.Entry;
 
 @SuppressWarnings("serial")
-public class MTLServer extends UnicastRemoteObject implements InterfaceRMI {
+public class LVLServer extends UnicastRemoteObject implements InterfaceRMI {
 
     private File logs = null;
     private int recordCount =0;
     private int baseID = 10000;
     private String recordID;
-    private int LVLport = 7875;
+    private int MTLport = 1412;
     private int DDOPort = 7825;
     private String managerID;
     public HashMap<String, List<Records>> recordDetails;
     
-    public MTLServer() throws IOException {
+    public LVLServer() throws IOException {
         logs = new File("MTLlog.txt");
         if(!logs.exists()) {
             logs.createNewFile();
@@ -49,9 +49,9 @@ public class MTLServer extends UnicastRemoteObject implements InterfaceRMI {
             String specialization, String location) throws RemoteException, IOException
     {
         // TODO Auto-generated method stub
-        if(location.equalsIgnoreCase("MTL"))
+        if(location.equalsIgnoreCase("LVL"))
                 recordCount++;
-        if(location.equalsIgnoreCase("LVL")) {
+        if(location.equalsIgnoreCase("MTL")) {
             
         }
         else {
@@ -120,16 +120,16 @@ public class MTLServer extends UnicastRemoteObject implements InterfaceRMI {
             aSocket = new DatagramSocket();
             byte[] message = "Record Count".getBytes();
             InetAddress aHost = InetAddress.getByName("localhost");
-            DatagramPacket request = new DatagramPacket(message, message.length, aHost, LVLport);
+            DatagramPacket request = new DatagramPacket(message, message.length, aHost, MTLport);
             aSocket.send(request);
-            this.traceLog("Sent request to LVL Server");
+            this.traceLog("Sent request to MTL Server");
             byte[] buffer = new byte[1000];
             DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
             aSocket.receive(reply);
-            this.traceLog("Received response from LVL Server");
+            this.traceLog("Received response from MTL Server");
             response = new String(reply.getData());
             aSocket.close();
-            this.traceLog("Connection is closed with LVL Server");
+            this.traceLog("Connection is closed with MTL Server");
             aSocket = new DatagramSocket();
             request = new DatagramPacket(message, message.length, aHost, DDOPort);
             aSocket.send(request);
@@ -137,7 +137,7 @@ public class MTLServer extends UnicastRemoteObject implements InterfaceRMI {
             byte[] buffer1 = new byte[1000];
             DatagramPacket reply1 = new DatagramPacket(buffer1, buffer1.length);
             aSocket.receive(reply1);
-            response = "MTL " +recordCount+ ",LVL " +response+ ",DDO" +reply1.getData();
+            response = "MTL " +response+ ",LVL " +recordCount+ ",DDO" +reply1.getData();
             this.traceLog("Received response from DDO Server");
             aSocket.close();
             this.traceLog("Connection is closed with DDO Server");
@@ -179,10 +179,10 @@ public class MTLServer extends UnicastRemoteObject implements InterfaceRMI {
                     if(fieldName.equalsIgnoreCase("location")) {
                         String c = ((TeacherRecord) rec).getLocation();
                         ((TeacherRecord) rec).setLocation(newValue);
-                        if(newValue.equalsIgnoreCase("MTL")) {
+                        if(newValue.equalsIgnoreCase("LVL")) {
                             recordCount++;
                         }
-                        if(newValue.equalsIgnoreCase("LVL")) {
+                        if(newValue.equalsIgnoreCase("MTL")) {
                             recordCount--;
                         }
                         else {
@@ -223,19 +223,19 @@ public class MTLServer extends UnicastRemoteObject implements InterfaceRMI {
         fw.close();
     }
    public static void main(String[] args) {
-       MTLServer mtl;
+       LVLServer lvl;
     try
     {
-        mtl = new MTLServer();
-        Registry registry = LocateRegistry.createRegistry(1412);
-        registry.bind("MTLServer" , mtl);
-        mtl.traceLog("MTL server started");
+        lvl = new LVLServer();
+        Registry registry = LocateRegistry.createRegistry(7875);
+        registry.bind("LVLServer" , lvl);
+        lvl.traceLog("LVL server started");
         while(true) {
             DatagramSocket socket = new DatagramSocket(1412);
             byte[] buffer = new byte[1000];
             DatagramPacket request = new DatagramPacket(buffer, buffer.length);
             socket.receive(request);
-            String rep = "MTL " +mtl.recordCount+ ",";
+            String rep = lvl.recordCount+ ",";
             byte[] buffer1 = rep.getBytes();
             DatagramPacket reply = new DatagramPacket(buffer1, buffer1.length, request.getAddress(), request.getPort());
             socket.send(reply);
